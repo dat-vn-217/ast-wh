@@ -134,6 +134,7 @@
     <div id="menu-btns"></div>
     <div id="msg-menu" class="msg"></div>
     <button class="big ghost" onclick="finish()">⏹ Không làm tiếp – Kết thúc</button>
+    <button class="link" id="menu-back" onclick="goBack()">← Quay lại</button>
   </section>
 
   <!-- 4. XÁC NHẬN CHỨC NĂNG -->
@@ -141,12 +142,18 @@
     <h2 id="act-title"></h2>
     <div id="act-card" class="card"></div>
     <div id="act-warn" class="msg warn"></div>
+    <div id="act-soan" style="display:none">
+      <label>Location (vị trí để hàng đã soạn) <span class="req">*</span></label>
+      <div class="row"><input id="a-loc" autocomplete="off" style="text-transform:uppercase"><button class="cam" onclick="scan('a-loc')">📷</button></div>
+    </div>
     <div id="act-xuat" style="display:none">
       <label>Người nhận (sản xuất) <span class="req">*</span></label>
       <div class="row"><input id="a-nhan" list="names" autocomplete="off"><button class="cam" onclick="scan('a-nhan')">📷</button></div>
       <label>Người xuất (kho) <span class="req">*</span></label>
       <div class="row"><input id="a-xuat" list="names" autocomplete="off"><button class="cam" onclick="scan('a-xuat')">📷</button></div>
     </div>
+    <label>Note (không bắt buộc)</label>
+    <input id="a-note" autocomplete="off" placeholder="Ghi chú thêm nếu có">
     <div id="msg-act" class="msg"></div>
     <button class="big primary" onclick="confirmAct()">✔ Xác nhận</button>
     <button class="link" onclick="go('menu')">← Quay lại chọn chức năng</button>
@@ -158,6 +165,7 @@
     <h1 style="text-align:center" id="done-title">Đã kết thúc thao tác</h1>
     <div id="done-card" class="card"></div>
     <button class="big primary" onclick="resetAll()">Làm đơn khác</button>
+    <button class="link" id="done-back" onclick="backToList()" style="display:none">← Về danh sách STT của ID này</button>
   </section>
 </main>
 
@@ -196,9 +204,9 @@ const ACTIONS = [
   { key: 'SOAN', icon: '📦', short: 'Soạn', sub: 'Ghi Ngày soạn xong' },
   { key: 'XUAT', icon: '🚚', short: 'Xuất', sub: 'Ghi Ngày SX nhận + người nhận/xuất, rồi kết thúc' }
 ];
-const GROUPS = { new: ['n-stt', 'n-id', 'n-item', 'n-line'], upd: ['u-id'], xuat: ['a-nhan', 'a-xuat'] };
-const FIELD_NAME = { 'n-all': 'QR tổng', 'n-stt': 'STT', 'n-id': 'ID', 'n-item': 'Item', 'n-line': 'Line', 'u-id': 'ID', 'a-nhan': 'Người nhận', 'a-xuat': 'Người xuất' };
-const S = { order: null, action: null, newKho: null, updKho: null, wantStt: null };
+const GROUPS = { new: ['n-stt', 'n-id', 'n-item', 'n-line'], upd: ['u-id'], soan: ['a-loc'], xuat: ['a-nhan', 'a-xuat'] };
+const FIELD_NAME = { 'n-all': 'QR tổng', 'n-stt': 'STT', 'n-id': 'ID', 'n-item': 'Item', 'n-line': 'Line', 'u-id': 'ID', 'a-nhan': 'Người nhận', 'a-xuat': 'Người xuất', 'a-loc': 'Location' };
+const S = { order: null, action: null, newKho: null, updKho: null, wantStt: null, from: 'home' };
 const groupOf = id => Object.keys(GROUPS).find(k => GROUPS[k].indexOf(id) >= 0);
 function val(id) { return $(id).value.trim(); }
 
@@ -216,7 +224,7 @@ else applyParams(Object.fromEntries(new URLSearchParams(location.search)));
 setInterval(() => { $('clock').textContent = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }); }, 1000);
 
 // Máy quét cầm tay / bàn phím: Enter = xong ô
-['n-all', 'n-stt', 'n-id', 'n-item', 'n-line', 'u-id', 'a-nhan', 'a-xuat'].forEach(id => {
+['n-all', 'n-stt', 'n-id', 'n-item', 'n-line', 'u-id', 'a-loc', 'a-nhan', 'a-xuat'].forEach(id => {
   $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); handleInput(id, val(id), true); } });
   $(id).addEventListener('change', () => { if (parseCombined(val(id))) handleInput(id, val(id), false); });
 });
@@ -233,12 +241,16 @@ function go(name) {
   window.scrollTo(0, 0);
 }
 function resetAll() {
-  ['n-all', 'n-stt', 'n-id', 'n-item', 'n-line', 'u-id', 'a-nhan', 'a-xuat'].forEach(id => $(id).value = '');
+  ['n-all', 'n-stt', 'n-id', 'n-item', 'n-line', 'u-id', 'a-loc', 'a-nhan', 'a-xuat', 'a-note'].forEach(id => $(id).value = '');
   $('upd-list').innerHTML = ''; $('home-scan').style.display = 'none';
   ['btn-home-new', 'btn-home-upd'].forEach(id => $(id).classList.remove('rec'));
   S.order = S.action = S.wantStt = null;          // giữ kho đã chọn cho đơn tiếp theo
   go('home');
 }
+// Quay lại từ menu: về danh sách STT (nếu đến từ Cập nhật) hoặc trang đầu
+function goBack() { if (S.from === 'upd') backToList(); else resetAll(); }
+function backToList() { go('upd'); if (val('u-id') && S.updKho) loadList(); }
+
 function renderKho() {
   $('new-kho').innerHTML = KHO.map(k => '<button class="' + (S.newKho === k ? 'sel' : '') + '" onclick="pickNewKho(\'' + k + '\')">' + k + '</button>').join('');
   $('upd-kho').innerHTML = KHO.map(k => '<button class="' + (S.updKho === k ? 'sel' : '') + '" onclick="pickUpdKho(\'' + k + '\')">' + k + '</button>').join('');
@@ -290,7 +302,7 @@ function handleInput(id, text, fromEnter) {
   const g = groupOf(id);
   const next = GROUPS[g].find(x => !val(x) && x !== id);
   if (next) $(next).focus();
-  else if (fromEnter) { $(id).blur(); ({ new: submitNew, xuat: confirmAct })[g](); }
+  else if (fromEnter) { $(id).blur(); ({ new: submitNew, soan: confirmAct, xuat: confirmAct })[g](); }
   return false;
 }
 
@@ -413,9 +425,9 @@ function submitNew() {
   if (!p.kho) return showMsg('msg-new', 'Vui lòng chọn kho xử lý (OG / N2).', 'err');
   if (!p.stt || !p.id || !p.item) return showMsg('msg-new', 'Vui lòng nhập đủ STT, ID, Item.', 'err');
   call('createOrder', p, 'msg-new', r => {
-    if (r.ok) { S.order = r.order; toast('✓ Đã ghi nhận đơn STT ' + r.order.stt + ' – kho ' + r.order.kho); go('menu'); return; }
+    if (r.ok) { S.order = r.order; S.from = 'new'; toast('✓ Đã ghi nhận đơn STT ' + r.order.stt + ' – kho ' + r.order.kho); go('menu'); return; }
     if (r.code === 'DUPLICATE') {
-      S.order = r.order;
+      S.order = r.order; S.from = 'new';
       showMsg('msg-new', '<b>⛔ ' + esc(r.msg) + '</b>' + cardHtml(r.order) +
         '<button class="big" onclick="go(\'menu\')">Mở đơn này để cập nhật</button>' +
         '<button class="big primary" onclick="resetAll()">Về trang đầu</button>', 'err', true);
@@ -446,7 +458,7 @@ function loadList() {
       r.orders.map((o, i) =>
         '<button class="big' + (S.wantStt && String(o.stt) === String(S.wantStt) ? ' rec' : '') + '" onclick="pickOrder(' + i + ')">' +
         '<span class="st">' + esc(o.status) + '</span><span class="stt">STT ' + esc(o.stt) + '</span>' +
-        '<span class="sub">' + esc(o.item) + (o.line ? ' · Line ' + esc(o.line) : '') + '</span>' +
+        '<span class="sub">' + esc(o.item) + (o.line ? ' · Line ' + esc(o.line) : '') + (o.location ? ' · 📍 ' + esc(o.location) : '') + '</span>' +
         '<div class="steps">' + stepChips(o) + '</div></button>').join('');
   });
 }
@@ -457,11 +469,12 @@ function stepChips(o) {
     return '<span class="chip' + (d ? ' ok' : '') + '">' + a.icon + ' ' + a.short + ': ' + (d ? '✓ ' + esc(shortDate(d)) : 'chưa') + '</span>';
   }).join('');
 }
-function pickOrder(i) { S.order = S.list[i]; go('menu'); }
+function pickOrder(i) { S.order = S.list[i]; S.from = 'upd'; S.wantStt = null; go('menu'); }
 
 /* ---- Menu chức năng ---- */
 function renderMenu() {
   const o = S.order;
+  $('menu-back').textContent = S.from === 'upd' ? '← Quay lại danh sách STT' : '← Về trang đầu';
   $('menu-card').innerHTML = cardHtml(o);
   $('menu-btns').innerHTML = ACTIONS.map(a => {
     const d = o.dates[a.key];
@@ -478,14 +491,22 @@ function openAct(key) {
   if (d) showMsg('act-warn', 'Bước này đã làm lúc <b>' + esc(d) + '</b>. Xác nhận sẽ ghi đè bằng thời điểm hiện tại.', 'warn', true);
   else $('act-warn').className = 'msg warn';
   $('act-xuat').style.display = key === 'XUAT' ? 'block' : 'none';
+  $('act-soan').style.display = key === 'SOAN' ? 'block' : 'none';
+  $('a-loc').value = o.location || '';
+  $('a-note').value = o.note || '';
   $('a-nhan').value = ''; $('a-xuat').value = '';
   $('a-nhan').placeholder = o.nguoiNhan ? 'Lần trước: ' + o.nguoiNhan : '';
   $('a-xuat').placeholder = o.nguoiXuat ? 'Lần trước: ' + o.nguoiXuat : '';
   go('act');
   if (key === 'XUAT') setTimeout(() => $('a-nhan').focus(), 50);
+  if (key === 'SOAN' && !o.location) setTimeout(() => $('a-loc').focus(), 50);
 }
 function confirmAct() {
-  const p = { stt: S.order.stt, id: S.order.id, action: S.action };
+  const p = { stt: S.order.stt, id: S.order.id, action: S.action, note: val('a-note') };
+  if (S.action === 'SOAN') {
+    p.location = val('a-loc').toUpperCase();
+    if (!p.location) return showMsg('msg-act', 'Vui lòng nhập Location trước khi xác nhận đã soạn.', 'err');
+  }
   if (S.action === 'XUAT') {
     p.nguoiNhan = val('a-nhan'); p.nguoiXuat = val('a-xuat');
     if (!p.nguoiNhan || !p.nguoiXuat) return showMsg('msg-act', 'Vui lòng nhập Người nhận và Người xuất.', 'err');
@@ -503,14 +524,21 @@ function finish() {
     S.order = r.order; showDone('Đã kết thúc thao tác');
   });
 }
-function showDone(title) { $('done-title').textContent = title; $('done-card').innerHTML = cardHtml(S.order); go('done'); }
+function showDone(title) {
+  $('done-title').textContent = title; $('done-card').innerHTML = cardHtml(S.order);
+  $('done-back').style.display = S.from === 'upd' ? 'block' : 'none';
+  go('done');
+}
 
 /* ================= HIỂN THỊ ================= */
 function cardHtml(o) {
   return '<div class="grid">' +
     kv('STT', o.stt) + '<div><div class="k">Kho</div><div class="v"><span class="khoTag">' + esc(o.kho || '—') + '</span></div></div>' +
     kv('ID', o.id) + kv('Line', o.line || '—') +
-    '<div style="grid-column:1/-1"><div class="k">Item</div><div class="v">' + esc(o.item) + '</div></div></div>' +
+    '<div style="grid-column:1/-1"><div class="k">Item</div><div class="v">' + esc(o.item) + '</div></div>' +
+    (o.location ? kv('Location', o.location) : '') +
+    (o.note ? '<div style="grid-column:1/-1"><div class="k">Note</div><div class="v" style="font-weight:400">' + esc(o.note) + '</div></div>' : '') +
+    '</div>' +
     '<div class="status">Tình trạng: ' + esc(o.status || '—') + '</div>';
 }
 function kv(k, v) { return '<div><div class="k">' + k + '</div><div class="v">' + esc(v) + '</div></div>'; }
