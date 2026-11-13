@@ -51,6 +51,10 @@
   .steps { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .chip { font-size:12px; font-weight:600; border-radius:6px; padding:3px 8px; background:#eceeea; color:var(--mu); }
   .chip.ok { background:#e8f5e9; color:var(--g); }
+  .seg { display:flex; gap:6px; }
+  .seg button { flex:1; padding:11px 4px; font-size:15px; font-weight:700; border-radius:10px; border:1.5px solid var(--line); background:#fff; }
+  .seg button.sel { border-color:var(--g); background:var(--g); color:#fff; }
+  .fhint { color:var(--mu); font-size:12px; margin:5px 2px 0; line-height:1.4; }
   .msg { display:none; margin:12px 0; padding:12px; border-radius:10px; font-size:15px; }
   .msg.on { display:block; } .msg.err { background:#fdecea; color:var(--r); border:1px solid #f5c2bd; }
   .msg.ok { background:#e8f5e9; color:var(--g); border:1px solid #b9dfbb; } .msg.warn { background:#fff8e1; color:#8a6d00; border:1px solid #ffe08a; }
@@ -116,14 +120,21 @@
   <!-- 2. CẬP NHẬT ĐƠN: ID → KHO → CHỌN STT -->
   <section id="s-upd" class="screen">
     <h2>Cập nhật đơn hàng</h2>
-    <p class="hint">Nhập hoặc quét ID, chọn kho, rồi chọn STT cần cập nhật. Đơn đã giao SX không hiển thị.</p>
-    <label>ID (WO ID) <span class="req">*</span></label>
-    <div class="row"><input id="u-id" autocomplete="off"><button class="cam" onclick="scan('u-id')">📷</button></div>
+    <p class="hint">Chọn kho và bộ lọc → bấm Tìm → chọn STT cần cập nhật. Đơn đã giao SX (đã có Ngày SX nhận) không hiển thị.</p>
     <label>Kho <span class="req">*</span></label>
     <div class="kho" id="upd-kho"></div>
+    <label>ID (WO ID)</label>
+    <div class="row"><input id="u-id" autocomplete="off" placeholder="Để trống = tất cả ID của kho"><button class="cam" onclick="scan('u-id')">📷</button></div>
+    <p class="fhint">Để trống: hiện tất cả STT chưa xuất của kho. Nhập/quét ID: chỉ hiện STT của ID đó (quét QR tổng cũng được).</p>
+    <label>Xuất QAD</label>
+    <div class="seg" id="f-qad"></div>
+    <p class="fhint"><b>None</b>: không lọc · <b>Đã xuất</b>: đã có ngày xuất QAD · <b>Chưa xuất</b>: chưa xuất QAD.</p>
+    <label>Soạn hàng</label>
+    <div class="seg" id="f-soan"></div>
+    <p class="fhint"><b>None</b>: không lọc · <b>Đã soạn</b>: đã soạn xong, chờ giao SX · <b>Chưa soạn</b>: cần soạn.</p>
+    <button class="big primary" id="btn-find" onclick="loadList()">🔍 Tìm STT chưa xuất</button>
     <div id="msg-upd" class="msg"></div>
     <div id="upd-list" class="olist"></div>
-    <button class="big primary" id="btn-find" onclick="loadList()">🔍 Tìm STT đang mở</button>
     <button class="link" onclick="go('home')">← Về trang đầu</button>
   </section>
 
@@ -206,12 +217,16 @@ const ACTIONS = [
 ];
 const GROUPS = { new: ['n-stt', 'n-id', 'n-item', 'n-line'], upd: ['u-id'], soan: ['a-loc'], xuat: ['a-nhan', 'a-xuat'] };
 const FIELD_NAME = { 'n-all': 'QR tổng', 'n-stt': 'STT', 'n-id': 'ID', 'n-item': 'Item', 'n-line': 'Line', 'u-id': 'ID', 'a-nhan': 'Người nhận', 'a-xuat': 'Người xuất', 'a-loc': 'Location' };
-const S = { order: null, action: null, newKho: null, updKho: null, wantStt: null, from: 'home' };
+const S = { order: null, action: null, newKho: null, updKho: null, wantStt: null, from: 'home', fQad: '', fSoan: '' };
+const FILTERS = {
+  qad:  [['', 'None'], ['done', 'Đã xuất'], ['todo', 'Chưa xuất']],
+  soan: [['', 'None'], ['done', 'Đã soạn'], ['todo', 'Chưa soạn']]
+};
 const groupOf = id => Object.keys(GROUPS).find(k => GROUPS[k].indexOf(id) >= 0);
 function val(id) { return $(id).value.trim(); }
 
 /* ================= KHỞI TẠO ================= */
-renderKho();
+renderKho(); renderFilters();
 api('getInit').then(r => {
   KHO = r.kho || KHO; LABEL = r.labels || LABEL; renderKho();
   $('lines').innerHTML = (r.lines || []).map(t => '<option value="' + esc(t) + '">').join('');
@@ -249,14 +264,22 @@ function resetAll() {
 }
 // Quay lại từ menu: về danh sách STT (nếu đến từ Cập nhật) hoặc trang đầu
 function goBack() { if (S.from === 'upd') backToList(); else resetAll(); }
-function backToList() { go('upd'); if (val('u-id') && S.updKho) loadList(); }
+function backToList() { go('upd'); if (S.updKho) loadList(); }
 
 function renderKho() {
   $('new-kho').innerHTML = KHO.map(k => '<button class="' + (S.newKho === k ? 'sel' : '') + '" onclick="pickNewKho(\'' + k + '\')">' + k + '</button>').join('');
   $('upd-kho').innerHTML = KHO.map(k => '<button class="' + (S.updKho === k ? 'sel' : '') + '" onclick="pickUpdKho(\'' + k + '\')">' + k + '</button>').join('');
 }
 function pickNewKho(k) { S.newKho = k; renderKho(); }
-function pickUpdKho(k) { S.updKho = k; renderKho(); if (val('u-id')) loadList(); }
+function pickUpdKho(k) { S.updKho = k; renderKho(); loadList(); }
+function renderFilters() {
+  const seg = (key, cur, fn) => FILTERS[key].map(f =>
+    '<button class="' + (cur === f[0] ? 'sel' : '') + '" onclick="' + fn + '(\'' + f[0] + '\')">' + f[1] + '</button>').join('');
+  $('f-qad').innerHTML = seg('qad', S.fQad, 'setFQad');
+  $('f-soan').innerHTML = seg('soan', S.fSoan, 'setFSoan');
+}
+function setFQad(v) { S.fQad = v; renderFilters(); if (S.updKho) loadList(); }
+function setFSoan(v) { S.fSoan = v; renderFilters(); if (S.updKho) loadList(); }
 
 /* ================= MÃ TỔNG ================= */
 // Nhận: "STT|ID|ITEM|LINE[|KHO]" (cũng chấp nhận ; tab xuống dòng) hoặc link ...?stt=..&id=..
@@ -298,7 +321,7 @@ function handleInput(id, text, fromEnter) {
     return false;
   }
   $(id).value = text;
-  if (id === 'u-id') { if (fromEnter || text) { if (S.updKho) loadList(); } return false; }
+  if (id === 'u-id') { if (S.updKho) loadList(); return false; }
   const g = groupOf(id);
   const next = GROUPS[g].find(x => !val(x) && x !== id);
   if (next) $(next).focus();
@@ -438,27 +461,28 @@ function submitNew() {
 }
 
 /* ---- Cập nhật: ID + kho → danh sách STT ---- */
-function homeUpd() { go('upd'); if (val('u-id') && S.updKho) loadList(); }
+function homeUpd() { go('upd'); if (S.updKho) loadList(); }
 
 function loadList() {
   const id = val('u-id');
   $('upd-list').innerHTML = '';
-  if (!id) return showMsg('msg-upd', 'Vui lòng nhập hoặc quét ID.', 'err');
   if (!S.updKho) return showMsg('msg-upd', 'Vui lòng chọn kho OG hoặc N2.', 'err');
   $('msg-upd').className = 'msg';
-  call('listOrders', { id: id, kho: S.updKho }, 'msg-upd', r => {
+  call('listOrders', { id: id, kho: S.updKho, qad: S.fQad, soan: S.fSoan }, 'msg-upd', r => {
+    const scope = (r.id ? 'ID <b>' + esc(r.id) + '</b> – ' : '') + 'kho <b>' + esc(r.kho) + '</b>';
     if (!r.orders.length) {
-      showMsg('msg-upd', 'Không có STT nào đang mở của ID <b>' + esc(r.id) + '</b> tại kho <b>' + esc(r.kho) + '</b>.' +
+      showMsg('msg-upd', 'Không có STT nào chưa xuất khớp bộ lọc (' + scope + ').' +
         (r.doneCount ? '<br>(' + r.doneCount + ' đơn đã giao SX – không hiển thị)' : ''), 'info', true);
       return;
     }
     S.list = r.orders;
-    $('upd-list').innerHTML = '<label>Chọn STT cần cập nhật (' + r.orders.length + ' đơn đang mở' +
-      (r.doneCount ? ', ẩn ' + r.doneCount + ' đơn đã giao SX' : '') + ')</label>' +
+    $('upd-list').innerHTML = '<label>Chọn STT cần cập nhật · ' + scope + ' · ' + r.total + ' đơn' +
+      (r.total > r.orders.length ? ' (hiện ' + r.orders.length + ' đơn mới nhất – nhập ID để thu hẹp)' : '') +
+      (r.doneCount ? ' · ẩn ' + r.doneCount + ' đơn đã giao SX' : '') + '</label>' +
       r.orders.map((o, i) =>
         '<button class="big' + (S.wantStt && String(o.stt) === String(S.wantStt) ? ' rec' : '') + '" onclick="pickOrder(' + i + ')">' +
         '<span class="st">' + esc(o.status) + '</span><span class="stt">STT ' + esc(o.stt) + '</span>' +
-        '<span class="sub">' + esc(o.item) + (o.line ? ' · Line ' + esc(o.line) : '') + (o.location ? ' · 📍 ' + esc(o.location) : '') + '</span>' +
+        '<span class="sub">ID ' + esc(o.id) + ' · ' + esc(o.item) + (o.line ? ' · Line ' + esc(o.line) : '') + (o.location ? ' · 📍 ' + esc(o.location) : '') + '</span>' +
         '<div class="steps">' + stepChips(o) + '</div></button>').join('');
   });
 }
