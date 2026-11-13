@@ -4,6 +4,7 @@
 <base target="_top">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>AST WH – Theo dõi đơn</title>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
@@ -19,30 +20,43 @@
   label { display:block; font-size:13px; font-weight:600; color:var(--mu); margin:12px 0 4px; }
   .req { color:var(--r); }
   .row { display:flex; gap:8px; }
-  input { flex:1; width:100%; font-size:18px; padding:12px; border:1.5px solid var(--line); border-radius:10px; background:#fff; }
+  input { flex:1; width:100%; font-size:18px; padding:12px; border:1.5px solid var(--line); border-radius:10px; background:#fff; color:var(--tx); }
   input:focus { outline:none; border-color:var(--g); box-shadow:0 0 0 3px rgba(46,125,50,.15); }
   .cam { width:54px; flex:none; font-size:22px; border:1.5px solid var(--line); border-radius:10px; background:#fff; }
-  button { font-family:inherit; cursor:pointer; }
-  .big { display:block; width:100%; padding:16px; margin:10px 0; font-size:17px; font-weight:700; border-radius:12px; border:1.5px solid var(--line); background:#fff; color:var(--tx); text-align:left; }
+  button { font-family:inherit; cursor:pointer; color:var(--tx); }
+  .big { display:block; width:100%; padding:16px; margin:10px 0; font-size:17px; font-weight:700; border-radius:12px; border:1.5px solid var(--line); background:#fff; text-align:left; }
   .big.primary { background:var(--g); border-color:var(--g); color:#fff; text-align:center; }
   .big.ghost { text-align:center; background:transparent; }
   .big .sub { display:block; font-weight:400; font-size:13px; color:var(--mu); margin-top:4px; }
   .big.done { border-color:var(--g2); background:#f6fbef; }
+  .rec { outline:3px solid var(--g2); }
   .link { background:none; border:none; color:var(--g); font-size:15px; padding:10px 0; }
   .card { background:#fff; border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; margin:8px 0 14px; }
   .card .k { color:var(--mu); font-size:12px; } .card .v { font-weight:700; font-size:16px; word-break:break-all; }
   .grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; }
   .status { margin-top:10px; padding:8px 10px; background:var(--y); border-radius:8px; font-weight:700; font-size:14px; }
   .khoTag { display:inline-block; background:var(--g); color:#fff; border-radius:6px; padding:1px 8px; }
+  .scanned { border-color:var(--g2); background:#f6fbef; } .scanned h2 { color:var(--g); }
   .kho { display:flex; gap:10px; margin:6px 0; }
   .kho button { flex:1; padding:16px 0; font-size:22px; font-weight:800; border-radius:12px; border:2px solid var(--line); background:#fff; }
   .kho button.sel { border-color:var(--g); background:var(--g); color:#fff; }
+  .allbox { background:#e8f5e9; border:1.5px dashed var(--g); border-radius:12px; padding:10px 12px 12px; margin:6px 0 4px; }
+  .allbox label { margin-top:0; color:var(--g); font-size:14px; }
+  .allbox .cam { width:auto; padding:0 14px; font-size:15px; font-weight:700; background:var(--g); color:#fff; border-color:var(--g); }
+  .allbox .hint { margin:6px 0 0; font-size:12px; }
+  .or { text-align:center; color:var(--mu); font-size:12px; margin:12px 0 0; }
+  .olist .big { padding:12px 14px; }
+  .olist .stt { font-size:20px; }
+  .olist .st { float:right; font-size:12px; font-weight:700; background:var(--y); border-radius:6px; padding:3px 8px; margin-top:3px; }
+  .steps { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .chip { font-size:12px; font-weight:600; border-radius:6px; padding:3px 8px; background:#eceeea; color:var(--mu); }
+  .chip.ok { background:#e8f5e9; color:var(--g); }
   .msg { display:none; margin:12px 0; padding:12px; border-radius:10px; font-size:15px; }
   .msg.on { display:block; } .msg.err { background:#fdecea; color:var(--r); border:1px solid #f5c2bd; }
   .msg.ok { background:#e8f5e9; color:var(--g); border:1px solid #b9dfbb; } .msg.warn { background:#fff8e1; color:#8a6d00; border:1px solid #ffe08a; }
+  .msg.info { background:#fff; color:var(--mu); border:1px solid var(--line); }
   .msg .big { margin:10px 0 0; }
   .doneIcon { font-size:64px; text-align:center; margin:10px 0 0; }
-  .scanned { border-color:var(--g2); background:#f6fbef; }
   #scanner { position:fixed; inset:0; background:rgba(0,0,0,.92); display:none; z-index:20; padding:14px; color:#fff; flex-direction:column; }
   #scanner.on { display:flex; }
   #scan-label { text-align:center; font-size:20px; font-weight:800; margin:4px 0 10px; }
@@ -52,8 +66,7 @@
   #scan-got { max-width:480px; margin:10px auto 0; font-size:15px; min-height:20px; color:#c8e6c9; }
   #scan-err { color:#ffcdd2; font-size:14px; margin:8px auto; max-width:480px; }
   #scanner .big { max-width:480px; margin:10px auto 0; }
-  .scanned h2 { color:var(--g); }
-  .rec { outline:3px solid var(--g2); }
+  #scanner .big.ghost { color:#fff; border-color:#777; }
   #busy { position:fixed; inset:0; background:rgba(255,255,255,.6); display:none; align-items:center; justify-content:center; z-index:30; font-weight:700; }
   #busy.on { display:flex; }
   #toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:var(--g); color:#fff; padding:12px 18px; border-radius:24px; font-weight:600; display:none; z-index:25; max-width:92%; text-align:center; }
@@ -68,14 +81,22 @@
   <section id="s-home" class="screen on">
     <div id="home-scan" class="card scanned" style="display:none"></div>
     <h1>Bạn muốn làm gì?</h1>
-    <button class="big primary" id="btn-home-new" onclick="go('new')">➕ Tạo đơn hàng mới</button>
-    <button class="big" id="btn-home-upd" onclick="homeUpd()">✏️ Cập nhật đơn hàng cũ<span class="sub">Quét STT + ID để mở đơn</span></button>
+    <button class="big primary" id="btn-home-new" onclick="go('new')">➕ Ghi nhận đơn hàng mới</button>
+    <button class="big" id="btn-home-upd" onclick="homeUpd()">✏️ Cập nhật đơn hàng<span class="sub">Nhập ID → chọn kho → chọn STT cần cập nhật</span></button>
   </section>
 
-  <!-- 1. TẠO ĐƠN MỚI -->
+  <!-- 1. GHI NHẬN ĐƠN MỚI -->
   <section id="s-new" class="screen">
     <h2>Bước 1 · Nhập thông tin đơn</h2>
-    <p class="hint">Bấm 📷 để quét mã kế bên ô trên picklist, hoặc dùng máy quét cầm tay.</p>
+    <div class="allbox">
+      <label>⚡ Quét QR tổng – tự điền 4 ô</label>
+      <div class="row">
+        <input id="n-all" autocomplete="off" placeholder="Quét / dán mã tổng">
+        <button class="cam" onclick="scan('n-all')">📷 Quét</button>
+      </div>
+      <p class="hint">Mã dạng <b>STT|ID|ITEM|LINE</b> (có thể thêm <b>|KHO</b> ở cuối).</p>
+    </div>
+    <p class="or">— hoặc quét / nhập từng ô —</p>
     <label>Kho xử lý <span class="req">*</span></label>
     <div class="kho" id="new-kho"></div>
     <label>STT đơn hàng (NO.) <span class="req">*</span></label>
@@ -88,20 +109,21 @@
     <div class="row"><input id="n-line" list="lines" autocomplete="off"><button class="cam" onclick="scan('n-line')">📷</button></div>
     <datalist id="lines"></datalist><datalist id="names"></datalist>
     <div id="msg-new" class="msg"></div>
-    <button class="big primary" onclick="submitNew()">Tạo đơn & tiếp tục</button>
+    <button class="big primary" onclick="submitNew()">Ghi nhận đơn & tiếp tục</button>
     <button class="link" onclick="go('home')">← Về trang đầu</button>
   </section>
 
-  <!-- 2. CẬP NHẬT ĐƠN CŨ -->
+  <!-- 2. CẬP NHẬT ĐƠN: ID → KHO → CHỌN STT -->
   <section id="s-upd" class="screen">
-    <h2>Cập nhật đơn hàng cũ</h2>
-    <p class="hint">Quét STT và ID. Kho được lấy theo STT đã tạo.</p>
-    <label>STT đơn hàng (NO.) <span class="req">*</span></label>
-    <div class="row"><input id="u-stt" autocomplete="off"><button class="cam" onclick="scan('u-stt')">📷</button></div>
+    <h2>Cập nhật đơn hàng</h2>
+    <p class="hint">Nhập hoặc quét ID, chọn kho, rồi chọn STT cần cập nhật. Đơn đã giao SX không hiển thị.</p>
     <label>ID (WO ID) <span class="req">*</span></label>
     <div class="row"><input id="u-id" autocomplete="off"><button class="cam" onclick="scan('u-id')">📷</button></div>
+    <label>Kho <span class="req">*</span></label>
+    <div class="kho" id="upd-kho"></div>
     <div id="msg-upd" class="msg"></div>
-    <button class="big primary" onclick="submitUpd()">Mở đơn</button>
+    <div id="upd-list" class="olist"></div>
+    <button class="big primary" id="btn-find" onclick="loadList()">🔍 Tìm STT đang mở</button>
     <button class="link" onclick="go('home')">← Về trang đầu</button>
   </section>
 
@@ -139,139 +161,141 @@
   </section>
 </main>
 
-<!-- MÀN HÌNH QUÉT (camera trực tiếp – chạy khi app mở từ GitHub Pages) -->
+<!-- MÀN HÌNH QUÉT -->
 <div id="scanner">
   <div id="scan-label"></div>
   <div id="reader"></div>
   <div id="scan-got"></div>
   <div id="scan-err"></div>
   <button class="big primary" onclick="closeScan()">Xong</button>
-  <button class="big ghost" style="color:#fff;border-color:#777" onclick="$('photo').click()">📸 Chụp ảnh mã (dự phòng)</button>
+  <button class="big ghost" onclick="$('photo').click()">📸 Chụp ảnh mã (dự phòng)</button>
 </div>
 <input type="file" id="photo" accept="image/*" capture="environment" style="display:none" onchange="scanPhoto(this)">
 <div id="busy">Đang xử lý…</div>
 <div id="toast"></div>
 
 <script>
-const $ = id => document.getElementById(id);
-let KHO = ['OG', 'N2'];
-let LABEL = { QAD: 'Xuất QAD', SOAN: 'Hoàn thành soạn đơn', XUAT: 'Xuất đơn' };
-const ACTIONS = [
-  { key: 'QAD',  icon: '🧾', sub: 'Ghi Ngày xuất QAD' },
-  { key: 'SOAN', icon: '📦', sub: 'Ghi Ngày soạn xong' },
-  { key: 'XUAT', icon: '🚚', sub: 'Ghi Ngày SX nhận + người nhận/xuất, rồi kết thúc' }
-];
-// Thứ tự trường khi quét mã gộp "STT|ID|ITEM|LINE|KHO"
-const GROUPS = { new: ['n-stt', 'n-id', 'n-item', 'n-line'], upd: ['u-stt', 'u-id'], xuat: ['a-nhan', 'a-xuat'] };
-const SUBMIT = { new: () => submitNew(), upd: () => submitUpd(), xuat: () => confirmAct() };
-const S = { order: null, action: null, newKho: null };
-
-/* ---------- kết nối server ----------
-   Trong Apps Script: dùng google.script.run.
-   Trên GitHub Pages: gọi API_URL (doPost trong Code.gs). */
+/* ================= KẾT NỐI SERVER =================
+   Trong Apps Script: google.script.run.  Trên GitHub Pages: gọi API_URL (doPost). */
 const API_URL = 'https://script.google.com/macros/s/AKfycbzAqFaKWtHm0dstXRR6-JdbCideIqTKcUPmCgwzLYhf_U6J5IjYmxYs-BI0onD8X7Ua/exec';
 const IN_GAS = !!(window.google && google.script && google.script.run);
 function api(fn, payload) {
   if (IN_GAS) return new Promise((ok, no) => google.script.run.withSuccessHandler(ok).withFailureHandler(no)[fn](payload));
   return fetch(API_URL, { method: 'POST', body: JSON.stringify({ fn: fn, payload: payload || {} }) })
+    .catch(() => { throw new Error('Không kết nối được hệ thống (kiểm tra mạng / quyền truy cập Apps Script).'); })
     .then(r => r.json())
     .then(r => { if (r.error) throw new Error(r.error); return r.data; });
 }
 
-/* ---------- khởi tạo ---------- */
-renderNewKho();
+/* ================= TRẠNG THÁI ================= */
+const $ = id => document.getElementById(id);
+let KHO = ['OG', 'N2'];
+let LABEL = { QAD: 'Xuất QAD', SOAN: 'Hoàn thành soạn đơn', XUAT: 'Xuất đơn' };
+const ACTIONS = [
+  { key: 'QAD',  icon: '🧾', short: 'QAD',  sub: 'Ghi Ngày xuất QAD' },
+  { key: 'SOAN', icon: '📦', short: 'Soạn', sub: 'Ghi Ngày soạn xong' },
+  { key: 'XUAT', icon: '🚚', short: 'Xuất', sub: 'Ghi Ngày SX nhận + người nhận/xuất, rồi kết thúc' }
+];
+const GROUPS = { new: ['n-stt', 'n-id', 'n-item', 'n-line'], upd: ['u-id'], xuat: ['a-nhan', 'a-xuat'] };
+const FIELD_NAME = { 'n-all': 'QR tổng', 'n-stt': 'STT', 'n-id': 'ID', 'n-item': 'Item', 'n-line': 'Line', 'u-id': 'ID', 'a-nhan': 'Người nhận', 'a-xuat': 'Người xuất' };
+const S = { order: null, action: null, newKho: null, updKho: null, wantStt: null };
+const groupOf = id => Object.keys(GROUPS).find(k => GROUPS[k].indexOf(id) >= 0);
+function val(id) { return $(id).value.trim(); }
+
+/* ================= KHỞI TẠO ================= */
+renderKho();
 api('getInit').then(r => {
-  KHO = r.kho || KHO; LABEL = r.labels || LABEL;
-  renderNewKho();
+  KHO = r.kho || KHO; LABEL = r.labels || LABEL; renderKho();
   $('lines').innerHTML = (r.lines || []).map(t => '<option value="' + esc(t) + '">').join('');
   $('names').innerHTML = (r.names || []).map(t => '<option value="' + esc(t) + '">').join('');
-}).catch(e => toast('⚠ Không kết nối được hệ thống: ' + e.message, true));
+}).catch(e => toast('⚠ ' + e.message, true));
 
-// QR trên picklist là link: .../exec?stt=..&id=..&item=..&line=..&kho=..
-// Quét bằng camera điện thoại → mở app với thông tin điền sẵn.
 if (IN_GAS) google.script.url.getLocation(loc => applyParams((loc && loc.parameter) || {}));
 else applyParams(Object.fromEntries(new URLSearchParams(location.search)));
 
-function applyParams(p) {
-  const g = k => String(p[k] || '').trim();
-  const P = { stt: g('stt'), id: g('id'), item: g('item').toUpperCase(), line: g('line'), kho: g('kho').toUpperCase() };
-  if (!P.stt || !P.id) return;
-  $('n-stt').value = P.stt; $('n-id').value = P.id; $('n-item').value = P.item; $('n-line').value = P.line;
-  $('u-stt').value = P.stt; $('u-id').value = P.id;
-  if (KHO.indexOf(P.kho) >= 0) pickNewKho(P.kho);
-  const hs = $('home-scan');
-  hs.style.display = 'block';
-  hs.innerHTML = '<h2>📄 Đã quét picklist</h2><div class="grid">' + kv('STT', P.stt) + kv('Kho', P.kho || '—') +
-    kv('ID', P.id) + kv('Line', P.line || '—') + '</div><div class="k" style="margin-top:6px">' + esc(P.item) +
-    '</div><div class="hint" id="home-hint" style="margin:8px 0 0">Đang kiểm tra đơn trên hệ thống…</div>';
-  api('lookupOrder', { stt: P.stt, id: P.id }).then(r => {
-    if (r.ok) {
-      $('home-hint').innerHTML = '✅ Đơn đã có (' + esc(r.order.status) + ') → chọn <b>Cập nhật đơn hàng cũ</b>';
-      $('btn-home-upd').classList.add('rec');
-    } else if (r.code === 'NOT_FOUND') {
-      $('home-hint').innerHTML = '🆕 Đơn chưa có → chọn <b>Tạo đơn hàng mới</b>';
-      $('btn-home-new').classList.add('rec');
-    } else $('home-hint').textContent = '⚠ ' + r.msg;
-  }).catch(() => { $('home-hint').textContent = ''; });
-}
-
-function homeUpd() { go('upd'); if (val('u-stt') && val('u-id')) submitUpd(); }
-
 setInterval(() => { $('clock').textContent = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }); }, 1000);
 
-Object.keys(GROUPS).forEach(g => GROUPS[g].forEach(id => {
-  $(id).addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); afterInput($(id), g, true); }   // máy quét gửi Enter
-  });
-  $(id).addEventListener('change', () => splitCombined($(id), g));
-}));
+// Máy quét cầm tay / bàn phím: Enter = xong ô
+['n-all', 'n-stt', 'n-id', 'n-item', 'n-line', 'u-id', 'a-nhan', 'a-xuat'].forEach(id => {
+  $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); handleInput(id, val(id), true); } });
+  $(id).addEventListener('change', () => { if (parseCombined(val(id))) handleInput(id, val(id), false); });
+});
 
-/* ---------- điều hướng ---------- */
+/* ================= ĐIỀU HƯỚNG ================= */
 function go(name) {
   closeScan();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
   $('s-' + name).classList.add('on');
   document.querySelectorAll('.msg').forEach(m => { if (m.id !== 'act-warn') m.className = 'msg'; });
   if (name === 'menu') renderMenu();
-  const first = { new: 'n-stt', upd: 'u-stt' }[name];
-  if (first) setTimeout(() => $(first).focus(), 50);
+  const first = { new: 'n-all', upd: 'u-id' }[name];
+  if (first && !val(first)) setTimeout(() => $(first).focus(), 50);
   window.scrollTo(0, 0);
 }
-
 function resetAll() {
-  Object.values(GROUPS).flat().forEach(id => $(id).value = '');
-  S.order = S.action = null;          // giữ kho đã chọn cho đơn tiếp theo
+  ['n-all', 'n-stt', 'n-id', 'n-item', 'n-line', 'u-id', 'a-nhan', 'a-xuat'].forEach(id => $(id).value = '');
+  $('upd-list').innerHTML = ''; $('home-scan').style.display = 'none';
+  ['btn-home-new', 'btn-home-upd'].forEach(id => $(id).classList.remove('rec'));
+  S.order = S.action = S.wantStt = null;          // giữ kho đã chọn cho đơn tiếp theo
   go('home');
 }
-
-function renderNewKho() {
-  $('new-kho').innerHTML = KHO.map(k =>
-    '<button class="' + (S.newKho === k ? 'sel' : '') + '" onclick="pickNewKho(\'' + k + '\')">' + k + '</button>').join('');
+function renderKho() {
+  $('new-kho').innerHTML = KHO.map(k => '<button class="' + (S.newKho === k ? 'sel' : '') + '" onclick="pickNewKho(\'' + k + '\')">' + k + '</button>').join('');
+  $('upd-kho').innerHTML = KHO.map(k => '<button class="' + (S.updKho === k ? 'sel' : '') + '" onclick="pickUpdKho(\'' + k + '\')">' + k + '</button>').join('');
 }
-function pickNewKho(k) { S.newKho = k; renderNewKho(); }
+function pickNewKho(k) { S.newKho = k; renderKho(); }
+function pickUpdKho(k) { S.updKho = k; renderKho(); if (val('u-id')) loadList(); }
 
-/* ---------- nhập liệu / quét ---------- */
-function splitCombined(inp, g) {
-  const v = inp.value;
-  if (v.indexOf('|') < 0) return false;
-  const parts = v.split('|').map(s => s.trim());
-  GROUPS[g].forEach((id, i) => { if (parts[i] !== undefined && parts[i] !== '') $(id).value = parts[i]; });
-  if (g === 'new' && parts[4] && KHO.indexOf(parts[4].toUpperCase()) >= 0) pickNewKho(parts[4].toUpperCase());
-  return true;
+/* ================= MÃ TỔNG ================= */
+// Nhận: "STT|ID|ITEM|LINE[|KHO]" (cũng chấp nhận ; tab xuống dòng) hoặc link ...?stt=..&id=..
+function parseCombined(text) {
+  text = String(text || '').trim();
+  if (/[?&]stt=/i.test(text)) {
+    const q = {};
+    text.split('?')[1].split('&').forEach(kv => { const a = kv.split('='); q[a[0].toLowerCase()] = decodeURIComponent((a[1] || '').replace(/\+/g, ' ')); });
+    return { stt: q.stt || '', id: q.id || '', item: q.item || '', line: q.line || '', kho: (q.kho || '').toUpperCase() };
+  }
+  const p = text.split(/\s*[|;\t\n]\s*/);
+  if (p.length < 2) return null;
+  return { stt: p[0] || '', id: p[1] || '', item: p[2] || '', line: p[3] || '', kho: (p[4] || '').toUpperCase() };
+}
+function fillNew(c) {
+  $('n-stt').value = c.stt; $('n-id').value = c.id; $('n-item').value = (c.item || '').toUpperCase(); $('n-line').value = c.line;
+  if (KHO.indexOf(c.kho) >= 0) pickNewKho(c.kho);
+  $('n-all').value = '';
 }
 
-function afterInput(inp, g, fromEnter) {
-  splitCombined(inp, g);
-  inp.value = inp.value.trim();
-  const next = GROUPS[g].find(id => !$(id).value.trim() && $(id) !== inp);
+// Xử lý 1 giá trị vừa quét/nhập vào ô `id`. Trả về true nếu là mã tổng (đã điền hết).
+function handleInput(id, text, fromEnter) {
+  text = String(text || '').trim();
+  const c = parseCombined(text);
+  if (c) {
+    if (id === 'u-id') {
+      $('u-id').value = c.id; S.wantStt = c.stt;
+      if (KHO.indexOf(c.kho) >= 0) S.updKho = c.kho;
+      renderKho(); if (S.updKho) loadList();
+    } else if (id.indexOf('n-') === 0) {
+      fillNew(c); toast('✓ Đã điền STT, ID, Item, Line' + (c.kho ? ' + kho ' + c.kho : ''));
+      if (!S.newKho) showMsg('msg-new', 'Chọn kho xử lý rồi bấm Ghi nhận đơn.', 'info');
+    } else { $(id).value = text; }
+    return true;
+  }
+  if (id === 'n-all') {
+    if (text) showMsg('msg-new', 'Mã vừa quét không phải QR tổng (cần dạng STT|ID|ITEM|LINE).', 'err');
+    $('n-all').value = '';
+    return false;
+  }
+  $(id).value = text;
+  if (id === 'u-id') { if (fromEnter || text) { if (S.updKho) loadList(); } return false; }
+  const g = groupOf(id);
+  const next = GROUPS[g].find(x => !val(x) && x !== id);
   if (next) $(next).focus();
-  else if (fromEnter) { inp.blur(); SUBMIT[g](); }
+  else if (fromEnter) { $(id).blur(); ({ new: submitNew, xuat: confirmAct })[g](); }
+  return false;
 }
 
+/* ================= QUÉT CAMERA ================= */
 let scanTarget = null, qr = null, lastHit = { t: '', at: 0 };
-const FIELD_NAME = { 'n-stt': 'STT', 'n-id': 'ID', 'n-item': 'Item', 'n-line': 'Line', 'u-stt': 'STT', 'u-id': 'ID', 'a-nhan': 'Người nhận', 'a-xuat': 'Người xuất' };
-const groupOf = id => Object.keys(GROUPS).find(k => GROUPS[k].indexOf(id) >= 0);
-
 function scan(id) {
   scanTarget = id;
   if (IN_GAS || !window.Html5Qrcode) { $('photo').click(); return; }   // Apps Script chặn camera → chụp ảnh
@@ -285,32 +309,42 @@ function scan(id) {
   }
   if (qr.isScanning) return;
   qr.start({ facingMode: 'environment' }, { fps: 12, qrbox: { width: 240, height: 240 } }, onLiveScan, () => {})
-    .catch(err => { $('scan-err').textContent = 'Không mở được camera (' + err + '). Hãy cho phép quyền Camera cho trình duyệt, hoặc dùng nút Chụp ảnh mã.'; });
+    .catch(err => { $('scan-err').textContent = 'Không mở được camera (' + err + '). Cho phép quyền Camera cho trình duyệt, hoặc dùng nút Chụp ảnh mã.'; });
 }
 function setScanLabel() {
-  const g = groupOf(scanTarget), list = GROUPS[g], i = list.indexOf(scanTarget);
-  $('scan-label').innerHTML = 'Quét: ' + FIELD_NAME[scanTarget] + ' <small>(' + (i + 1) + '/' + list.length + ' – quét xong tự chuyển ô kế tiếp)</small>';
+  const g = groupOf(scanTarget), list = g ? GROUPS[g] : [scanTarget], i = list.indexOf(scanTarget);
+  $('scan-label').innerHTML = 'Quét: ' + FIELD_NAME[scanTarget] +
+    (list.length > 1 ? ' <small>(' + (i + 1) + '/' + list.length + ' – quét xong tự chuyển ô kế tiếp)</small>' : '');
 }
-function stopCam() {
-  try { if (qr && qr.isScanning) return qr.stop().catch(() => {}); } catch (e) {}
-  return Promise.resolve();
-}
+function stopCam() { try { if (qr && qr.isScanning) return qr.stop().catch(() => {}); } catch (e) {} return Promise.resolve(); }
 function closeScan() { stopCam(); $('scanner').classList.remove('on'); }
 
 function onLiveScan(text) {
   text = String(text).trim();
   const now = Date.now();
-  if (text === lastHit.t && now - lastHit.at < 2500) return;          // camera vẫn đang chĩa vào mã cũ
+  if (text === lastHit.t && now - lastHit.at < 2500) return;                     // vẫn đang chĩa vào mã cũ
   const g = groupOf(scanTarget);
-  if (GROUPS[g].some(id => id !== scanTarget && $(id).value.trim() === text)) return;  // mã đã điền ở ô khác
+  if (g && GROUPS[g].some(id => id !== scanTarget && val(id) === text)) return;  // mã đã điền ở ô khác
   lastHit = { t: text, at: now };
   $('reader').classList.add('hit'); setTimeout(() => $('reader').classList.remove('hit'), 400);
   if (navigator.vibrate) navigator.vibrate(60);
-  const filledAll = fillScanned(text, true);
-  $('scan-got').textContent = '✓ ' + (filledAll ? 'Đã điền tất cả từ QR tổng' : FIELD_NAME[scanTarget] + ': ' + text);
-  const next = GROUPS[g].find(id => !$(id).value.trim());
-  if (filledAll || !next) { setTimeout(closeScan, 500); return; }
+  const combined = handleInputLive(text);
+  if (combined === null) return;                                                 // mã sai loại, quét tiếp
+  $('scan-got').textContent = '✓ ' + (combined ? 'Đã điền từ QR tổng' : FIELD_NAME[scanTarget] + ': ' + text);
+  const next = g && GROUPS[g].find(id => !val(id));
+  if (combined || !next || scanTarget === 'u-id') { setTimeout(closeScan, 450); return; }
   scanTarget = next; setScanLabel();
+}
+function handleInputLive(text) {
+  if (scanTarget === 'n-all' && !parseCombined(text)) {
+    $('scan-err').textContent = 'Đây không phải QR tổng (' + text + '). Hãy quét mã tổng trên picklist.';
+    return null;
+  }
+  $('scan-err').textContent = '';
+  if (parseCombined(text)) { handleInput(scanTarget, text, false); return true; }
+  $(scanTarget).value = text;
+  if (scanTarget === 'u-id' && S.updKho) setTimeout(loadList, 500);
+  return false;
 }
 
 function scanPhoto(el) {
@@ -320,32 +354,24 @@ function scanPhoto(el) {
   $('busy').textContent = 'Đang đọc mã…'; $('busy').classList.add('on');
   decodeFile(file).then(text => {
     $('busy').classList.remove('on'); $('busy').textContent = 'Đang xử lý…';
-    if (text) fillScanned(text);
-    else toast('Không đọc được mã. Chụp gần hơn, mã nằm giữa và rõ nét.', true);
+    if (!text) return toast('Không đọc được mã. Chụp gần hơn, mã nằm giữa và rõ nét.', true);
+    closeScan();
+    handleInput(scanTarget, text, false);
   });
 }
-
-// Đọc QR từ ảnh: BarcodeDetector (Android) → jsQR ở nhiều kích thước (iPhone)
+// Đọc QR từ ảnh: BarcodeDetector (Android) → jsQR nhiều kích thước (iPhone)
 async function decodeFile(file) {
   let img;
   try { img = await createImageBitmap(file); }
-  catch (e) {
-    img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(file); });
-  }
+  catch (e) { img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = URL.createObjectURL(file); }); }
   if ('BarcodeDetector' in window) {
-    try {
-      const r = await new BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'data_matrix'] }).detect(img);
-      if (r.length) return r[0].rawValue;
-    } catch (e) {}
+    try { const r = await new BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'data_matrix'] }).detect(img); if (r.length) return r[0].rawValue; } catch (e) {}
   }
   if (!window.jsQR) return '';
   const W = img.width, H = img.height;
-  // thử ảnh nguyên và vùng giữa ảnh (60%), ở vài độ phân giải
   for (const crop of [1, 0.6]) for (const max of [1000, 700, 1400]) {
-    const sw = W * crop, sh = H * crop, sx = (W - sw) / 2, sy = (H - sh) / 2;
-    const k = Math.min(1, max / Math.max(sw, sh));
-    const c = document.createElement('canvas');
-    c.width = Math.round(sw * k); c.height = Math.round(sh * k);
+    const sw = W * crop, sh = H * crop, sx = (W - sw) / 2, sy = (H - sh) / 2, k = Math.min(1, max / Math.max(sw, sh));
+    const c = document.createElement('canvas'); c.width = Math.round(sw * k); c.height = Math.round(sh * k);
     const ctx = c.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
     const res = jsQR(ctx.getImageData(0, 0, c.width, c.height).data, c.width, c.height, { inversionAttempts: 'attemptBoth' });
@@ -354,59 +380,86 @@ async function decodeFile(file) {
   return '';
 }
 
-function fillScanned(text, live) {
-  const inp = $(scanTarget);
-  text = String(text).trim();
-  // quét nhầm QR dạng link picklist bằng nút 📷 → lấy tham số trong link
-  const m = text.match(/[?&]stt=/) ? text : null;
-  if (m) {
-    const q = {}; text.split('?')[1].split('&').forEach(kv => { const a = kv.split('='); q[a[0]] = decodeURIComponent((a[1] || '').replace(/\+/g, ' ')); });
-    applyParams(q); toast('✓ Đã điền từ QR picklist'); return true;
-  }
-  inp.value = text;
-  const g = groupOf(scanTarget);
-  if (splitCombined(inp, g)) return true;
-  if (!live) { if (navigator.vibrate) navigator.vibrate(80); afterInput(inp, g, false); }
-  return false;
+/* ================= QR LINK (mở app từ camera điện thoại) ================= */
+function applyParams(p) {
+  const c = parseCombined(p.stt ? '?' + new URLSearchParams(p).toString() : '');
+  if (!c || !c.stt || !c.id) return;
+  fillNew(c);
+  $('u-id').value = c.id; S.wantStt = c.stt;
+  if (KHO.indexOf(c.kho) >= 0) S.updKho = c.kho;
+  renderKho();
+  const hs = $('home-scan');
+  hs.style.display = 'block';
+  hs.innerHTML = '<h2>📄 Đã quét picklist</h2><div class="grid">' + kv('STT', c.stt) + kv('Kho', c.kho || '—') + kv('ID', c.id) + kv('Line', c.line || '—') +
+    '</div><div class="k" style="margin-top:6px">' + esc(c.item) + '</div><div class="hint" id="home-hint" style="margin:8px 0 0">Đang kiểm tra đơn…</div>';
+  api('lookupOrder', { stt: c.stt, id: c.id }).then(r => {
+    if (r.ok) { $('home-hint').innerHTML = '✅ Đơn đã có (' + esc(r.order.status) + ') → chọn <b>Cập nhật đơn hàng</b>'; $('btn-home-upd').classList.add('rec'); }
+    else if (r.code === 'NOT_FOUND') { $('home-hint').innerHTML = '🆕 Đơn chưa có → chọn <b>Ghi nhận đơn hàng mới</b>'; $('btn-home-new').classList.add('rec'); }
+    else $('home-hint').textContent = '⚠ ' + r.msg;
+  }).catch(() => { $('home-hint').textContent = ''; });
 }
 
-/* ---------- gọi server ---------- */
+/* ================= GỌI SERVER ================= */
 function call(fn, payload, msgId, onOk) {
   $('busy').classList.add('on');
   api(fn, payload)
     .then(r => { $('busy').classList.remove('on'); onOk(r); })
     .catch(e => { $('busy').classList.remove('on'); showMsg(msgId, '⚠ ' + e.message, 'err'); });
 }
-function val(id) { return $(id).value.trim(); }
 
+/* ---- Ghi nhận đơn mới ---- */
 function submitNew() {
   const p = { kho: S.newKho, stt: val('n-stt'), id: val('n-id'), item: val('n-item').toUpperCase(), line: val('n-line') };
   if (!p.kho) return showMsg('msg-new', 'Vui lòng chọn kho xử lý (OG / N2).', 'err');
   if (!p.stt || !p.id || !p.item) return showMsg('msg-new', 'Vui lòng nhập đủ STT, ID, Item.', 'err');
   call('createOrder', p, 'msg-new', r => {
-    if (r.ok) { S.order = r.order; toast('✓ Đã tạo đơn STT ' + r.order.stt + ' – kho ' + r.order.kho); go('menu'); return; }
+    if (r.ok) { S.order = r.order; toast('✓ Đã ghi nhận đơn STT ' + r.order.stt + ' – kho ' + r.order.kho); go('menu'); return; }
     if (r.code === 'DUPLICATE') {
       S.order = r.order;
       showMsg('msg-new', '<b>⛔ ' + esc(r.msg) + '</b>' + cardHtml(r.order) +
-        '<button class="big" onclick="openDup()">Mở đơn này để cập nhật</button>' +
+        '<button class="big" onclick="go(\'menu\')">Mở đơn này để cập nhật</button>' +
         '<button class="big primary" onclick="resetAll()">Về trang đầu</button>', 'err', true);
       return;
     }
     showMsg('msg-new', r.msg, 'err');
   });
 }
-function openDup() { $('u-stt').value = S.order.stt; $('u-id').value = val('n-id'); go('upd'); submitUpd(); }
 
-function submitUpd() {
-  const p = { stt: val('u-stt'), id: val('u-id') };
-  if (!p.stt || !p.id) return showMsg('msg-upd', 'Vui lòng quét đủ STT và ID.', 'err');
-  call('lookupOrder', p, 'msg-upd', r => {
-    if (!r.ok) return showMsg('msg-upd', r.msg, 'err');
-    S.order = r.order; go('menu');
+/* ---- Cập nhật: ID + kho → danh sách STT ---- */
+function homeUpd() { go('upd'); if (val('u-id') && S.updKho) loadList(); }
+
+function loadList() {
+  const id = val('u-id');
+  $('upd-list').innerHTML = '';
+  if (!id) return showMsg('msg-upd', 'Vui lòng nhập hoặc quét ID.', 'err');
+  if (!S.updKho) return showMsg('msg-upd', 'Vui lòng chọn kho OG hoặc N2.', 'err');
+  $('msg-upd').className = 'msg';
+  call('listOrders', { id: id, kho: S.updKho }, 'msg-upd', r => {
+    if (!r.orders.length) {
+      showMsg('msg-upd', 'Không có STT nào đang mở của ID <b>' + esc(r.id) + '</b> tại kho <b>' + esc(r.kho) + '</b>.' +
+        (r.doneCount ? '<br>(' + r.doneCount + ' đơn đã giao SX – không hiển thị)' : ''), 'info', true);
+      return;
+    }
+    S.list = r.orders;
+    $('upd-list').innerHTML = '<label>Chọn STT cần cập nhật (' + r.orders.length + ' đơn đang mở' +
+      (r.doneCount ? ', ẩn ' + r.doneCount + ' đơn đã giao SX' : '') + ')</label>' +
+      r.orders.map((o, i) =>
+        '<button class="big' + (S.wantStt && String(o.stt) === String(S.wantStt) ? ' rec' : '') + '" onclick="pickOrder(' + i + ')">' +
+        '<span class="st">' + esc(o.status) + '</span><span class="stt">STT ' + esc(o.stt) + '</span>' +
+        '<span class="sub">' + esc(o.item) + (o.line ? ' · Line ' + esc(o.line) : '') + '</span>' +
+        '<div class="steps">' + stepChips(o) + '</div></button>').join('');
   });
 }
+function shortDate(d) { return String(d || '').replace(/\/\d{4}/, ''); }
+function stepChips(o) {
+  return ACTIONS.map(a => {
+    const d = o.dates[a.key];
+    return '<span class="chip' + (d ? ' ok' : '') + '">' + a.icon + ' ' + a.short + ': ' + (d ? '✓ ' + esc(shortDate(d)) : 'chưa') + '</span>';
+  }).join('');
+}
+function pickOrder(i) { S.order = S.list[i]; go('menu'); }
 
-/* ---------- menu chức năng ---------- */
+/* ---- Menu chức năng ---- */
 function renderMenu() {
   const o = S.order;
   $('menu-card').innerHTML = cardHtml(o);
@@ -417,7 +470,6 @@ function renderMenu() {
       '<span class="sub">' + (d ? 'Đã làm lúc ' + esc(d) : 'Chưa làm') + ' · ' + a.sub + '</span></button>';
   }).join('');
 }
-
 function openAct(key) {
   S.action = key;
   const o = S.order, d = o.dates[key];
@@ -432,7 +484,6 @@ function openAct(key) {
   go('act');
   if (key === 'XUAT') setTimeout(() => $('a-nhan').focus(), 50);
 }
-
 function confirmAct() {
   const p = { stt: S.order.stt, id: S.order.id, action: S.action };
   if (S.action === 'XUAT') {
@@ -446,39 +497,30 @@ function confirmAct() {
     toast(r.msg); go('menu');
   });
 }
-
 function finish() {
   call('finishOrder', { stt: S.order.stt, id: S.order.id }, 'msg-menu', r => {
     if (!r.ok) return showMsg('msg-menu', r.msg, 'err');
     S.order = r.order; showDone('Đã kết thúc thao tác');
   });
 }
+function showDone(title) { $('done-title').textContent = title; $('done-card').innerHTML = cardHtml(S.order); go('done'); }
 
-function showDone(title) {
-  $('done-title').textContent = title;
-  $('done-card').innerHTML = cardHtml(S.order);
-  go('done');
-}
-
-/* ---------- hiển thị ---------- */
+/* ================= HIỂN THỊ ================= */
 function cardHtml(o) {
   return '<div class="grid">' +
     kv('STT', o.stt) + '<div><div class="k">Kho</div><div class="v"><span class="khoTag">' + esc(o.kho || '—') + '</span></div></div>' +
     kv('ID', o.id) + kv('Line', o.line || '—') +
-    '<div style="grid-column:1/-1">' + '<div class="k">Item</div><div class="v">' + esc(o.item) + '</div></div></div>' +
+    '<div style="grid-column:1/-1"><div class="k">Item</div><div class="v">' + esc(o.item) + '</div></div></div>' +
     '<div class="status">Tình trạng: ' + esc(o.status || '—') + '</div>';
 }
 function kv(k, v) { return '<div><div class="k">' + k + '</div><div class="v">' + esc(v) + '</div></div>'; }
 function showMsg(id, html, type, raw) {
-  const m = $(id);
-  m.innerHTML = raw ? html : esc(html);
-  m.className = 'msg on ' + type;
+  const m = $(id); m.innerHTML = raw ? html : esc(html); m.className = 'msg on ' + type;
   m.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 let tt;
 function toast(t, err) {
-  const el = $('toast');
-  el.textContent = t; el.style.background = err ? 'var(--r)' : 'var(--g)';
+  const el = $('toast'); el.textContent = t; el.style.background = err ? 'var(--r)' : 'var(--g)';
   el.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('on'), 3000);
 }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
