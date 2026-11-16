@@ -692,7 +692,7 @@ function markStale(scope) {
 /* ================= BỘ LỌC NÂNG CAO ================= */
 let OPTS = {}, HAS_WEEK = false;
 const ADV = [
-  { k: 'WEEK', l: 'Week', t: 'multi' },
+  { k: 'WEEK', l: 'Week', t: 'week', ph: 'VD: 47  ·  45,47  ·  44-47' },
   { k: 'STT', l: 'STT đơn hàng', t: 'text', ph: 'Gõ một phần, VD: 1527' },
   { k: 'ITEM', l: 'Item', t: 'text', ph: 'VD: RWHHW' },
   { k: 'ID', l: 'ID', t: 'text', ph: 'VD: 13986' },
@@ -708,12 +708,13 @@ const advFields = scope => ADV.filter(f => (!f.only || f.only === scope) && (f.k
 const advSt = (scope, k) => S.adv[scope][k] || (S.adv[scope][k] = { on: false, values: [], text: '', from: '', to: '' });
 function advActive(f, st) {
   if (!st.on) return false;
-  return f.t === 'multi' ? st.values.length > 0 : f.t === 'text' ? !!st.text.trim() : !!(st.from || st.to);
+  return f.t === 'multi' ? st.values.length > 0 : f.t === 'week' ? parseWeeks(st.text).length > 0 : f.t === 'text' ? !!st.text.trim() : !!(st.from || st.to);
 }
 function advSummary(f, st) {
   if (!advActive(f, st)) return '';
   if (f.t === 'multi') return st.values.join(', ');
   if (f.t === 'text') return '“' + st.text.trim() + '”';
+  if (f.t === 'week') return 'Tuần ' + st.text.trim();
   const d = x => x ? x.replace('T', ' ').slice(5).replace('-', '/') : '…';
   return d(st.from) + ' → ' + d(st.to);
 }
@@ -742,6 +743,10 @@ function advFieldHtml(scope, f) {
         : '<span class="fhint">Chưa có dữ liệu.</span>';
     } else if (f.t === 'text') {
       h += '<input value="' + esc(st.text) + '" placeholder="' + esc(f.ph || '') + '" oninput="advSet(' + a + ',\'text\',this.value)">';
+    } else if (f.t === 'week') {
+      h += '<input value="' + esc(st.text) + '" placeholder="' + esc(f.ph) + '" inputmode="text" oninput="advSet(' + a + ',\'text\',this.value)">' +
+        '<p class="fhint">Một tuần: <b>47</b> · nhiều tuần: <b>45,47</b> · khoảng: <b>44-47</b>' +
+        ((OPTS.WEEK || []).length ? ' · Có dữ liệu tuần ' + esc(OPTS.WEEK[OPTS.WEEK.length - 1]) + '–' + esc(OPTS.WEEK[0]) : '') + '</p>';
     } else {
       h += '<div class="drow"><span>Từ</span><input type="datetime-local" value="' + st.from + '" onchange="advSet(' + a + ',\'from\',this.value)"></div>' +
         '<div class="drow"><span>Đến</span><input type="datetime-local" value="' + st.to + '" onchange="advSet(' + a + ',\'to\',this.value)"></div>' +
@@ -751,6 +756,18 @@ function advFieldHtml(scope, f) {
     h += '</div>';
   }
   return h + '</div>';
+}
+// "40-42, 47" → ['40','41','42','47']
+function parseWeeks(t) {
+  const out = [];
+  String(t || '').split(/[,;\s]+/).forEach(p => {
+    const m = p.match(/^(\d{1,2})(?:-(\d{1,2}))?$/);
+    if (!m) return;
+    let a = +m[1], b = m[2] ? +m[2] : a;
+    if (a > b) [a, b] = [b, a];
+    for (let w = a; w <= b && w <= 60; w++) if (out.indexOf(String(w)) < 0) out.push(String(w));
+  });
+  return out;
 }
 function toggleAdv(scope) { S.advOpen[scope] = !S.advOpen[scope]; renderAdv(scope); }
 function advToggle(scope, k, on) { advSt(scope, k).on = on; renderAdv(scope); markStale(scope); }
@@ -786,6 +803,7 @@ function advPayload(scope) {
     const st = advSt(scope, f.k);
     if (!advActive(f, st)) return;
     if (f.t === 'multi') out[f.k] = { values: st.values.slice() };
+    else if (f.t === 'week') out[f.k] = { values: parseWeeks(st.text) };
     else if (f.t === 'text') out[f.k] = { text: st.text.trim() };
     else out[f.k] = { from: st.from ? new Date(st.from).getTime() : 0, to: st.to ? new Date(st.to).getTime() + 59999 : 0 };
   });
