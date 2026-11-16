@@ -11,7 +11,29 @@
   :root { --g:#2e7d32; --g2:#92d050; --y:#ffeb3b; --r:#c62828; --bg:#f4f6f3; --line:#d7dcd4; --tx:#1d231c; --mu:#5f6b5c; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body { margin:0; font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--tx); font-size:16px; }
-  .top { background:var(--g); color:#fff; padding:12px 16px; font-weight:700; letter-spacing:.3px; position:sticky; top:0; z-index:5; }
+  .top { background:var(--g); color:#fff; padding:10px 12px; font-weight:700; letter-spacing:.3px; position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:10px; min-height:50px; }
+  .hback { flex:none; background:rgba(255,255,255,.18); color:#fff; border:1.5px solid rgba(255,255,255,.55); border-radius:10px; padding:7px 12px; font-size:15px; font-weight:700; }
+  .hback:active { background:rgba(255,255,255,.35); }
+  .adv { margin:4px 0 6px; }
+  .advbtn { width:100%; text-align:left; padding:12px 14px; font-size:16px; font-weight:700; border-radius:12px; border:1.5px dashed var(--g); background:#fff; color:var(--g); display:flex; align-items:center; gap:8px; }
+  .advbtn.has { background:#e8f5e9; border-style:solid; }
+  .advbtn .badge { background:var(--g); color:#fff; border-radius:10px; padding:1px 8px; font-size:13px; }
+  .advbtn .car { margin-left:auto; }
+  .advbox { border:1.5px solid var(--line); border-top:none; border-radius:0 0 12px 12px; background:#fff; padding:6px 12px 10px; margin-top:-6px; }
+  .af { border-bottom:1px solid #eef0ec; padding:8px 0; }
+  .af:last-of-type { border-bottom:none; }
+  .af .ck { display:flex; align-items:center; gap:10px; margin:0; font-size:15px; color:var(--tx); font-weight:600; }
+  .af .ck input { width:20px; height:20px; flex:none; accent-color:var(--g); }
+  .af .ck .sum { margin-left:auto; font-size:12px; font-weight:600; color:var(--g); max-width:50%; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .af .ctl { margin:8px 0 2px 30px; }
+  .af .ctl input { font-size:16px; padding:9px 10px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chips button { padding:7px 11px; border-radius:18px; border:1.5px solid var(--line); background:#fff; font-size:14px; font-weight:600; }
+  .chips button.sel { background:var(--g); border-color:var(--g); color:#fff; }
+  .drow { display:grid; grid-template-columns:38px 1fr; gap:6px; align-items:center; margin-bottom:6px; }
+  .drow span { font-size:13px; color:var(--mu); }
+  .quick { display:flex; gap:6px; flex-wrap:wrap; margin-top:2px; }
+  .quick button { padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:#f6f8f5; font-size:13px; }
   .top small { font-weight:400; opacity:.85; margin-left:6px; }
   main { max-width:520px; margin:0 auto; padding:16px; }
   .screen { display:none; } .screen.on { display:block; }
@@ -46,8 +68,8 @@
   .allbox .hint { margin:6px 0 0; font-size:12px; }
   .or { text-align:center; color:var(--mu); font-size:12px; margin:12px 0 0; }
   .olist .big { padding:12px 14px; }
-  .olist .stt { font-size:20px; }
-  .olist .st { float:right; font-size:12px; font-weight:700; background:var(--y); border-radius:6px; padding:3px 8px; margin-top:3px; }
+  .olist .stt, .res .stt { font-size:20px; }
+  .olist .st, .res .st { float:right; font-size:12px; font-weight:700; background:var(--y); border-radius:6px; padding:3px 8px; margin-top:3px; }
   .steps { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .chip { font-size:12px; font-weight:600; border-radius:6px; padding:3px 8px; background:#eceeea; color:var(--mu); }
   .chip.ok { background:#e8f5e9; color:var(--g); }
@@ -85,7 +107,7 @@
 </style>
 </head>
 <body>
-<div class="top">AST WH · Theo dõi đơn<small id="clock"></small></div>
+<div class="top"><button id="hdr-back" class="hback" onclick="headerBack()" style="display:none">← Quay lại</button><span>AST WH · Theo dõi đơn<small id="clock"></small></span></div>
 <main>
 
   <!-- 0. TRANG ĐẦU -->
@@ -94,13 +116,14 @@
     <h1>Bạn muốn làm gì?</h1>
     <button class="big primary" id="btn-home-new" onclick="go('new')">➕ Ghi nhận đơn hàng mới</button>
     <button class="big" id="btn-home-upd" onclick="homeUpd()">✏️ Cập nhật đơn hàng<span class="sub">Nhập ID → chọn kho → chọn STT cần cập nhật</span></button>
-    <button class="big" onclick="go('search'); if (!$('s-res').innerHTML) runSearch()">🔎 Tra cứu đơn đã xuất / xuất 1 phần<span class="sub">Tìm theo kho, ID, STT, Item – xem lịch sử từng lần giao</span></button>
+    <button class="big" onclick="go('search')">🔎 Tra cứu đơn đã xuất / xuất 1 phần<span class="sub">Tìm theo kho, ID, STT, Item – xem lịch sử từng lần giao</span></button>
   </section>
 
   <!-- 6. TRA CỨU -->
   <section id="s-search" class="screen">
     <h2>Tra cứu đơn đã xuất</h2>
-    <p class="hint">Chỉ xem thông tin. Đơn đang giao 1 phần có nút để giao tiếp phần còn lại.</p>
+    <p class="hint">Chọn bộ lọc → bấm <b>🔎 Tìm</b> mới hiện kết quả. Chỉ xem thông tin; đơn đang giao 1 phần có nút để giao tiếp phần còn lại.</p>
+    <div class="adv" id="adv-search"></div>
     <label>Kho</label>
     <div class="seg" id="q-kho"></div>
     <label>Loại đơn</label>
@@ -112,7 +135,6 @@
     <button class="big primary" onclick="runSearch()">🔎 Tìm</button>
     <div id="msg-search" class="msg"></div>
     <div id="s-res" class="res"></div>
-    <button class="link" onclick="go('home')">← Về trang đầu</button>
   </section>
 
   <!-- 1. GHI NHẬN ĐƠN MỚI -->
@@ -140,13 +162,13 @@
     <datalist id="lines"></datalist><datalist id="names"></datalist>
     <div id="msg-new" class="msg"></div>
     <button class="big primary" onclick="submitNew()">Ghi nhận đơn & tiếp tục</button>
-    <button class="link" onclick="go('home')">← Về trang đầu</button>
   </section>
 
   <!-- 2. CẬP NHẬT ĐƠN: ID → KHO → CHỌN STT -->
   <section id="s-upd" class="screen">
     <h2>Cập nhật đơn hàng</h2>
-    <p class="hint">Chọn kho và bộ lọc → bấm Tìm → chọn STT cần cập nhật. Đơn đã giao SX (đã có Ngày SX nhận) không hiển thị.</p>
+    <p class="hint">Chọn kho, bộ lọc → bấm <b>🔍 Tìm</b> mới hiện kết quả → chọn STT cần cập nhật. Đơn đã giao SX (đã có Ngày SX nhận) không hiển thị.</p>
+    <div class="adv" id="adv-upd"></div>
     <label>Kho <span class="req">*</span></label>
     <div class="kho" id="upd-kho"></div>
     <label>ID (WO ID)</label>
@@ -164,7 +186,6 @@
     <button class="big primary" id="btn-find" onclick="loadList()">🔍 Tìm STT chưa xuất</button>
     <div id="msg-upd" class="msg"></div>
     <div id="upd-list" class="olist"></div>
-    <button class="link" onclick="go('home')">← Về trang đầu</button>
   </section>
 
   <!-- 3. MENU CHỨC NĂNG -->
@@ -174,7 +195,6 @@
     <div id="menu-btns"></div>
     <div id="msg-menu" class="msg"></div>
     <button class="big ghost" onclick="finish()">⏹ Không làm tiếp – Kết thúc</button>
-    <button class="link" id="menu-back" onclick="goBack()">← Quay lại</button>
   </section>
 
   <!-- 4. XÁC NHẬN CHỨC NĂNG -->
@@ -199,7 +219,6 @@
     <input id="a-note" autocomplete="off" placeholder="Ghi chú thêm nếu có">
     <div id="msg-act" class="msg"></div>
     <button class="big primary" onclick="confirmAct()">✔ Xác nhận</button>
-    <button class="link" onclick="go('menu')">← Quay lại chọn chức năng</button>
   </section>
 
   <!-- 5. HOÀN TẤT -->
@@ -208,7 +227,6 @@
     <h1 style="text-align:center" id="done-title">Đã kết thúc thao tác</h1>
     <div id="done-card" class="card"></div>
     <button class="big primary" onclick="resetAll()">Làm đơn khác</button>
-    <button class="link" id="done-back" onclick="backToList()" style="display:none">← Về danh sách STT của ID này</button>
   </section>
 </main>
 
@@ -266,6 +284,7 @@ api('getInit').then(r => {
   KHO = r.kho || KHO; LABEL = r.labels || LABEL; renderKho();
   $('lines').innerHTML = (r.lines || []).map(t => '<option value="' + esc(t) + '">').join('');
   $('names').innerHTML = (r.names || []).map(t => '<option value="' + esc(t) + '">').join('');
+  OPTS = r.options || {}; HAS_WEEK = !!r.hasWeek; renderAdv('upd'); renderAdv('search');
 }).catch(e => toast('⚠ ' + e.message, true));
 
 if (IN_GAS) google.script.url.getLocation(loc => applyParams((loc && loc.parameter) || {}));
@@ -285,6 +304,7 @@ function go(name) {
   closeScan();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
   $('s-' + name).classList.add('on');
+  S.screen = name; updateHeaderBack();
   document.querySelectorAll('.msg').forEach(m => { if (m.id !== 'act-warn') m.className = 'msg'; });
   if (name === 'menu') renderMenu();
   const first = { new: 'n-all', upd: 'u-id' }[name];
@@ -310,7 +330,7 @@ function renderKho() {
   $('upd-kho').innerHTML = KHO.map(k => '<button class="' + (S.updKho === k ? 'sel' : '') + '" onclick="pickUpdKho(\'' + k + '\')">' + k + '</button>').join('');
 }
 function pickNewKho(k) { S.newKho = k; renderKho(); }
-function pickUpdKho(k) { S.updKho = k; renderKho(); loadList(); }
+function pickUpdKho(k) { S.updKho = k; renderKho(); markStale('upd'); }
 function renderFilters() {
   const seg = (key, cur, fn) => FILTERS[key].map(f =>
     '<button class="' + (cur === f[0] ? 'sel' : '') + '" onclick="' + fn + '(\'' + f[0] + '\')">' + f[1] + '</button>').join('');
@@ -318,9 +338,9 @@ function renderFilters() {
   $('f-soan').innerHTML = seg('soan', S.fSoan, 'setFSoan');
   $('f-giao').innerHTML = seg('giao', S.fGiao, 'setFGiao');
 }
-function setFQad(v) { S.fQad = v; renderFilters(); if (S.updKho) loadList(); }
-function setFSoan(v) { S.fSoan = v; renderFilters(); if (S.updKho) loadList(); }
-function setFGiao(v) { S.fGiao = v; renderFilters(); if (S.updKho) loadList(); }
+function setFQad(v) { S.fQad = v; renderFilters(); markStale('upd'); }
+function setFSoan(v) { S.fSoan = v; renderFilters(); markStale('upd'); }
+function setFGiao(v) { S.fGiao = v; renderFilters(); markStale('upd'); }
 
 /* ================= MÃ TỔNG ================= */
 // Nhận: "STT|ID|ITEM|LINE[|KHO]" (cũng chấp nhận ; tab xuống dòng) hoặc link ...?stt=..&id=..
@@ -345,12 +365,12 @@ function fillNew(c) {
 function handleInput(id, text, fromEnter) {
   text = String(text || '').trim();
   const c = parseCombined(text);
-  if (id === 'q-text') { $('q-text').value = c ? c.stt : text; runSearch(); return !!c; }
+  if (id === 'q-text') { $('q-text').value = c ? c.stt : text; if (fromEnter) runSearch(); else markStale('search'); return !!c; }
   if (c) {
     if (id === 'u-id') {
       $('u-id').value = c.id; S.wantStt = c.stt;
       if (KHO.indexOf(c.kho) >= 0) S.updKho = c.kho;
-      renderKho(); if (S.updKho) loadList();
+      renderKho(); markStale('upd');
     } else if (id.indexOf('n-') === 0) {
       fillNew(c); toast('✓ Đã điền STT, ID, Item, Line' + (c.kho ? ' + kho ' + c.kho : ''));
       if (!S.newKho) showMsg('msg-new', 'Chọn kho xử lý rồi bấm Ghi nhận đơn.', 'info');
@@ -363,7 +383,7 @@ function handleInput(id, text, fromEnter) {
     return false;
   }
   $(id).value = text;
-  if (id === 'u-id') { if (S.updKho) loadList(); return false; }
+  if (id === 'u-id') { if (fromEnter) loadList(); else markStale('upd'); return false; }
   const g = groupOf(id);
   const next = GROUPS[g].find(x => !val(x) && x !== id);
   if (next) $(next).focus();
@@ -421,7 +441,7 @@ function handleInputLive(text) {
   $('scan-err').textContent = '';
   if (parseCombined(text)) { handleInput(scanTarget, text, false); return true; }
   $(scanTarget).value = text;
-  if (scanTarget === 'u-id' && S.updKho) setTimeout(loadList, 500);
+  if (scanTarget === 'u-id') markStale('upd');
   return false;
 }
 
@@ -504,14 +524,14 @@ function submitNew() {
 }
 
 /* ---- Cập nhật: ID + kho → danh sách STT ---- */
-function homeUpd() { go('upd'); if (S.updKho) loadList(); }
+function homeUpd() { go('upd'); }
 
 function loadList() {
   const id = val('u-id');
   $('upd-list').innerHTML = '';
   if (!S.updKho) return showMsg('msg-upd', 'Vui lòng chọn kho OG hoặc N2.', 'err');
   $('msg-upd').className = 'msg';
-  call('listOrders', { id: id, kho: S.updKho, qad: S.fQad, soan: S.fSoan, giao: S.fGiao }, 'msg-upd', r => {
+  call('listOrders', { id: id, kho: S.updKho, qad: S.fQad, soan: S.fSoan, giao: S.fGiao, adv: advPayload('upd') }, 'msg-upd', r => {
     const scope = (r.id ? 'ID <b>' + esc(r.id) + '</b> – ' : '') + 'kho <b>' + esc(r.kho) + '</b>';
     if (!r.orders.length) {
       showMsg('msg-upd', 'Không có STT nào chưa xuất khớp bộ lọc (' + scope + ').' +
@@ -543,7 +563,6 @@ function pickOrder(i) { S.order = S.list[i]; S.from = 'upd'; S.wantStt = null; g
 /* ---- Menu chức năng ---- */
 function renderMenu() {
   const o = S.order;
-  $('menu-back').textContent = S.from === 'upd' ? '← Quay lại danh sách STT' : S.from === 'search' ? '← Quay lại kết quả tra cứu' : '← Về trang đầu';
   $('menu-card').innerHTML = cardHtml(o);
   $('menu-btns').innerHTML = ACTIONS.map(a => {
     const d = o.dates[a.key], pc = a.key === 'XUAT' && o.partial && o.partial.count;
@@ -602,8 +621,6 @@ function finish() {
 }
 function showDone(title) {
   $('done-title').textContent = title; $('done-card').innerHTML = cardHtml(S.order);
-  $('done-back').style.display = S.from === 'upd' || S.from === 'search' ? 'block' : 'none';
-  $('done-back').textContent = S.from === 'search' ? '← Về kết quả tra cứu' : '← Về danh sách STT';
   go('done');
 }
 
@@ -619,13 +636,13 @@ function setMode(m) { S.mode = m; renderMode(); if (m === 'partial' && !val('a-n
 /* ---- Tra cứu ---- */
 function renderSearchFilters() {
   $('q-kho').innerHTML = [['', 'Tất cả']].concat(KHO.map(k => [k, k])).map(k =>
-    '<button class="' + (S.qKho === k[0] ? 'sel' : '') + '" onclick="S.qKho=\'' + k[0] + '\';renderSearchFilters();runSearch()">' + k[1] + '</button>').join('');
+    '<button class="' + (S.qKho === k[0] ? 'sel' : '') + '" onclick="S.qKho=\'' + k[0] + '\';renderSearchFilters();markStale(\'search\')">' + k[1] + '</button>').join('');
   $('q-type').innerHTML = SEARCH_TYPES.map(t =>
-    '<button class="' + (S.qType === t[0] ? 'sel' : '') + '" onclick="S.qType=\'' + t[0] + '\';renderSearchFilters();runSearch()">' + t[1] + '</button>').join('');
+    '<button class="' + (S.qType === t[0] ? 'sel' : '') + '" onclick="S.qType=\'' + t[0] + '\';renderSearchFilters();markStale(\'search\')">' + t[1] + '</button>').join('');
 }
 function runSearch() {
   $('s-res').innerHTML = '';
-  call('searchOrders', { kho: S.qKho, type: S.qType, q: val('q-text') }, 'msg-search', r => {
+  call('searchOrders', { kho: S.qKho, type: S.qType, q: val('q-text'), adv: advPayload('search') }, 'msg-search', r => {
     S.res = r.orders;
     if (!r.orders.length) return showMsg('msg-search', 'Không tìm thấy đơn phù hợp.', 'info');
     $('msg-search').className = 'msg';
@@ -650,6 +667,131 @@ function detailHtml(o, i) {
 }
 function contFromSearch(i) { S.order = S.res[i]; S.from = 'search'; openAct('XUAT'); }
 
+/* ================= NÚT QUAY LẠI Ở TIÊU ĐỀ ================= */
+function updateHeaderBack() {
+  const b = $('hdr-back'), sc = S.screen;
+  b.style.display = sc === 'home' ? 'none' : '';
+  b.textContent = sc === 'act' ? '← Chức năng'
+    : (sc === 'menu' || sc === 'done') ? (S.from === 'upd' ? '← Danh sách' : S.from === 'search' ? '← Kết quả' : '← Trang đầu')
+    : '← Trang đầu';
+}
+function headerBack() {
+  const sc = S.screen;
+  if (sc === 'act') return go('menu');
+  if (sc === 'menu') return goBack();
+  if (sc === 'done') return (S.from === 'upd' || S.from === 'search') ? backToList() : resetAll();
+  go('home');
+}
+
+/* Bộ lọc/ô tìm thay đổi → xóa kết quả cũ, chờ bấm Tìm */
+function markStale(scope) {
+  const list = scope === 'upd' ? 'upd-list' : 's-res', msg = scope === 'upd' ? 'msg-upd' : 'msg-search';
+  if ($(list).innerHTML) { $(list).innerHTML = ''; showMsg(msg, 'Bộ lọc đã thay đổi – bấm Tìm để xem kết quả.', 'info'); }
+}
+
+/* ================= BỘ LỌC NÂNG CAO ================= */
+let OPTS = {}, HAS_WEEK = false;
+const ADV = [
+  { k: 'WEEK', l: 'Week', t: 'multi' },
+  { k: 'STT', l: 'STT đơn hàng', t: 'text', ph: 'Gõ một phần, VD: 1527' },
+  { k: 'ITEM', l: 'Item', t: 'text', ph: 'VD: RWHHW' },
+  { k: 'ID', l: 'ID', t: 'text', ph: 'VD: 13986' },
+  { k: 'QAD', l: 'Ngày xuất QAD', t: 'date' },
+  { k: 'SOAN', l: 'Ngày soạn xong', t: 'date' },
+  { k: 'PART_DATE', l: 'Ngày giao 1 phần', t: 'date' },
+  { k: 'XUAT', l: 'Ngày SX nhận', t: 'date', only: 'search' },
+  { k: 'TINH_TRANG', l: 'Tình trạng đơn hàng', t: 'multi' },
+  { k: 'LOCATION', l: 'Location', t: 'text', ph: 'VD: B2' }
+];
+S.adv = { upd: {}, search: {} }; S.advOpen = { upd: false, search: false };
+const advFields = scope => ADV.filter(f => (!f.only || f.only === scope) && (f.k !== 'WEEK' || HAS_WEEK));
+const advSt = (scope, k) => S.adv[scope][k] || (S.adv[scope][k] = { on: false, values: [], text: '', from: '', to: '' });
+function advActive(f, st) {
+  if (!st.on) return false;
+  return f.t === 'multi' ? st.values.length > 0 : f.t === 'text' ? !!st.text.trim() : !!(st.from || st.to);
+}
+function advSummary(f, st) {
+  if (!advActive(f, st)) return '';
+  if (f.t === 'multi') return st.values.join(', ');
+  if (f.t === 'text') return '“' + st.text.trim() + '”';
+  const d = x => x ? x.replace('T', ' ').slice(5).replace('-', '/') : '…';
+  return d(st.from) + ' → ' + d(st.to);
+}
+function renderAdv(scope) {
+  const fields = advFields(scope), open = S.advOpen[scope];
+  const n = fields.filter(f => advActive(f, advSt(scope, f.k))).length;
+  let h = '<button class="advbtn' + (n ? ' has' : '') + '" onclick="toggleAdv(\'' + scope + '\')">⚙️ Bộ lọc (tra chi tiết)' +
+    (n ? ' <span class="badge">' + n + ' đang lọc</span>' : '') + '<span class="car">' + (open ? '▴' : '▾') + '</span></button>';
+  if (open) {
+    h += '<div class="advbox"><p class="fhint">Tick hạng mục cần lọc – chọn được <b>nhiều hạng mục cùng lúc</b> (đơn phải thỏa tất cả). Ngày giờ chọn theo lịch. Lọc xong bấm <b>Tìm</b>.</p>' +
+      fields.map(f => advFieldHtml(scope, f)).join('') +
+      (n ? '<button class="link" onclick="clearAdv(\'' + scope + '\')">✕ Xóa toàn bộ bộ lọc</button>' : '') + '</div>';
+  }
+  $('adv-' + scope).innerHTML = h;
+}
+function advFieldHtml(scope, f) {
+  const st = advSt(scope, f.k), a = '\'' + scope + '\',\'' + f.k + '\'';
+  let h = '<div class="af"><label class="ck"><input type="checkbox"' + (st.on ? ' checked' : '') +
+    ' onchange="advToggle(' + a + ',this.checked)"> ' + f.l + '<span class="sum" id="sum-' + scope + '-' + f.k + '">' + esc(advSummary(f, st)) + '</span></label>';
+  if (st.on) {
+    h += '<div class="ctl">';
+    if (f.t === 'multi') {
+      const opts = OPTS[f.k] || [];
+      h += opts.length ? '<div class="chips">' + opts.map((o, i) =>
+        '<button class="' + (st.values.indexOf(o) >= 0 ? 'sel' : '') + '" onclick="advPick(' + a + ',' + i + ')">' + esc(o) + '</button>').join('') + '</div>'
+        : '<span class="fhint">Chưa có dữ liệu.</span>';
+    } else if (f.t === 'text') {
+      h += '<input value="' + esc(st.text) + '" placeholder="' + esc(f.ph || '') + '" oninput="advSet(' + a + ',\'text\',this.value)">';
+    } else {
+      h += '<div class="drow"><span>Từ</span><input type="datetime-local" value="' + st.from + '" onchange="advSet(' + a + ',\'from\',this.value)"></div>' +
+        '<div class="drow"><span>Đến</span><input type="datetime-local" value="' + st.to + '" onchange="advSet(' + a + ',\'to\',this.value)"></div>' +
+        '<div class="quick"><button onclick="advQuick(' + a + ',0)">Hôm nay</button><button onclick="advQuick(' + a + ',1)">Hôm qua</button>' +
+        '<button onclick="advQuick(' + a + ',7)">7 ngày qua</button><button onclick="advQuick(' + a + ',-1)">Xóa ngày</button></div>';
+    }
+    h += '</div>';
+  }
+  return h + '</div>';
+}
+function toggleAdv(scope) { S.advOpen[scope] = !S.advOpen[scope]; renderAdv(scope); }
+function advToggle(scope, k, on) { advSt(scope, k).on = on; renderAdv(scope); markStale(scope); }
+function advPick(scope, k, i) {
+  const st = advSt(scope, k), o = (OPTS[k] || [])[i], j = st.values.indexOf(o);
+  if (j >= 0) st.values.splice(j, 1); else st.values.push(o);
+  renderAdv(scope); markStale(scope);
+}
+function advSet(scope, k, field, v) {
+  const st = advSt(scope, k); st[field] = v;
+  const f = ADV.find(x => x.k === k), el = $('sum-' + scope + '-' + k);
+  if (el) el.textContent = advSummary(f, st);
+  const n = advFields(scope).filter(x => advActive(x, advSt(scope, x.k))).length, btn = $('adv-' + scope).querySelector('.advbtn');
+  btn.classList.toggle('has', n > 0);
+  btn.innerHTML = '⚙️ Bộ lọc (tra chi tiết)' + (n ? ' <span class="badge">' + n + ' đang lọc</span>' : '') + '<span class="car">▴</span>';
+  markStale(scope);
+}
+function advQuick(scope, k, days) {
+  const st = advSt(scope, k), pad = x => String(x).padStart(2, '0');
+  const day = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  if (days < 0) { st.from = st.to = ''; }
+  else {
+    const now = new Date(), a = new Date(now); a.setDate(now.getDate() - days);
+    const b = days === 1 ? a : now;
+    st.from = day(a) + 'T00:00'; st.to = day(b) + 'T23:59';
+  }
+  renderAdv(scope); markStale(scope);
+}
+function clearAdv(scope) { S.adv[scope] = {}; renderAdv(scope); markStale(scope); }
+function advPayload(scope) {
+  const out = {};
+  advFields(scope).forEach(f => {
+    const st = advSt(scope, f.k);
+    if (!advActive(f, st)) return;
+    if (f.t === 'multi') out[f.k] = { values: st.values.slice() };
+    else if (f.t === 'text') out[f.k] = { text: st.text.trim() };
+    else out[f.k] = { from: st.from ? new Date(st.from).getTime() : 0, to: st.to ? new Date(st.to).getTime() + 59999 : 0 };
+  });
+  return out;
+}
+
 /* ================= HIỂN THỊ ================= */
 function cardHtml(o) {
   return '<div class="grid">' +
@@ -672,6 +814,9 @@ function toast(t, err) {
   el.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('on'), 3000);
 }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+// vẽ khung bộ lọc nâng cao (sau khi mọi biến đã khai báo)
+renderAdv('upd'); renderAdv('search');
 </script>
 </body>
 </html>
